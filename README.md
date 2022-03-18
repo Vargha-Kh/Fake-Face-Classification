@@ -6,6 +6,21 @@ Using pytorch utils for preprocessing and data splitting i used fake-face datase
 
 <br/>
 
+## How to use:
+### First clone the repo
+``` git clone https://github.com/Vargha-Kh/Fake-Face-Classification.git ```
+
+### Then install the requirements in the directory
+``` pip install -r requirements.txt ```
+
+### Run main.py file to begin datasets preprocessing and start training
+``` python main.py ```
+
+### Run evaluation.py to evaluate your trained model
+``` python evaluation.py ```
+
+<br/>
+
 ## Result 
 The final result of the classification evaluation was: <br/>
 Accuracy: 1.0
