@@ -5,7 +5,7 @@ from utils.hp import load_hps
 from datasets.dataset_torch import Dataset
 from utils.plotting import plot
 import torch
-from utils.callback import Model_checkpoint
+from utils.callback import Model_checkpoint, EarlyStopping
 from adabelief_pytorch import AdaBelief
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -76,7 +76,12 @@ def training(model, ds_train, ds_valid, criterion, optimizer, scheduler, device,
                    'val_acc': valid_accs}
         Model_checkpoint(path='./', metrics=metrics, model=model,
                          monitor='val_acc', verbose=True,
-                         file_name="best.pth")
+                         file_name="best_acc.pth")
+        Model_checkpoint(path='./', metrics=metrics, model=model,
+                         monitor='val_loss', verbose=True,
+                         file_name="best_loss.pth")
+        Early_Stopping = EarlyStopping()
+        early_stop = Early_Stopping.Early_Stopping(metrics, 20, monitor='val_loss', verbose=True)
 
         history = {'epoch': epochs, 'accuracy': train_accs, 'loss': train_losses, 'val_accuracy': valid_accs,
                    'val_loss': valid_losses, 'LR': optimizer.param_groups[0]['lr']}
@@ -84,11 +89,13 @@ def training(model, ds_train, ds_valid, criterion, optimizer, scheduler, device,
         print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
         print("Epoch:", epoch + 1, "- Train Loss:", total_loss_train, "- Train Accuracy:", total_acc_train,
               "- Validation Loss:", total_loss_valid, "- Validation Accuracy:", total_acc_valid)
+        if Early_Stopping.Early_Stopping(metrics, 20, monitor='val_loss', verbose=True) is True:
+            return model, history
     return model, history
 
 
 def train_torch():
-    hps = load_hps(dataset_dir="./fake_real-faces/", model_name='regnet', n_epochs=50, batch_size=2,
+    hps = load_hps(dataset_dir="./fake_real-faces/", model_name='regnet', n_epochs=150, batch_size=16,
                    learning_rate=0.001,
                    lr_reducer_factor=0.2,
                    lr_reducer_patience=8, img_size=299, framework='pytorch')
@@ -100,13 +107,14 @@ def train_torch():
                                                                            batch_size=hps['batch_size'],
                                                                            split_size=0.3, augment=True)
         model.to(device)
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss
         optimizer = AdaBelief(model.parameters(), lr=hps['learning_rate'])
         reduce_on_plateau = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=hps['lr_reducer_factor'],
                                                                        patience=hps['lr_reducer_patience'],
                                                                        verbose=True)
-        model, history = training(model, train_loader, val_loader, criterion, optimizer,
-                                  reduce_on_plateau, device, hps['n_epochs'])
+        model, history, early_stop = training(model, train_loader, val_loader, criterion, optimizer,
+                                              reduce_on_plateau, device, hps['n_epochs'])
+
         plot(history)
 
 

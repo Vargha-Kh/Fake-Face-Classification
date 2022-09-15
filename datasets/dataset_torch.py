@@ -10,7 +10,7 @@ from .preparing_datasets import PreparingDatasets
 
 class Dataset:
     @staticmethod
-    def pytorch_preprocess(dataset_dir="./fake_real-faces/", img_size=224, batch_size=16, augment=True, split_size=0.3):
+    def pytorch_preprocess(dataset_dir="./classification/", img_size=224, batch_size=16, augment=True, split_size=0.3):
         # preparing_datasets = PreparingDatasets(framework='pytorch')
         # preparing_datasets.preparing_datasets(split_size=split_size)
 
